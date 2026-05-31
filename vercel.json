@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.ts"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "dist/assets/$1"
+    },
+    {
+      "src": "/favicon.svg",
+      "dest": "dist/favicon.svg"
+    },
+    {
+      "src": "/foto_fundo.svg",
+      "dest": "dist/foto_fundo.svg"
+    },
+    {
+      "src": "/FOTO FUNDO .svg",
+      "dest": "dist/FOTO FUNDO .svg"
+    },
+    {
+      "src": "/hero_strategy_graphic.png",
+      "dest": "dist/hero_strategy_graphic.png"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "dist/index.html"
+    }
+  ]
+}

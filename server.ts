@@ -71,203 +71,202 @@ interface Lead {
 }
 
 let leads: Lead[] = [];
+const app = express();
+app.use(express.json());
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+// API Routes
+app.post("/api/leads", async (req, res) => {
+  try {
+    const newLeadData = {
+      ...req.body,
+      status: 'novo'
+    };
 
-  app.use(express.json());
-
-  // API Routes
-  app.post("/api/leads", async (req, res) => {
-    try {
-      const newLeadData = {
-        ...req.body,
-        status: 'novo'
-      };
-
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_ANON_KEY;
-      
-      let finalLead = {
-        id: Math.random().toString(36).substring(2, 11),
-        ...newLeadData,
-        data: new Date().toISOString()
-      };
-
-      if (supabaseUrl && supabaseKey) {
-        // Send to Supabase
-        const response = await fetch(`${supabaseUrl}/rest/v1/leads`, {
-          method: "POST",
-          headers: {
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`,
-            "Content-Type": "application/json",
-            "Prefer": "return=representation"
-          },
-          body: JSON.stringify(newLeadData)
-        });
-        if (!response.ok) {
-          throw new Error(`Supabase insert error: ${response.statusText}`);
-        }
-        const result = await response.json();
-        if (result && result.length > 0) {
-          finalLead = result[0];
-        }
-      } else {
-        // Local memory fallback
-        leads.unshift(finalLead);
-      }
-
-      // Lead Notification Dispatcher
-      await dispatchNotifications(finalLead);
-
-      res.status(201).json({ success: true, lead: finalLead });
-    } catch (error) {
-      console.error("Erro ao processar lead:", error);
-      res.status(500).json({ success: false, error: "Erro interno do servidor" });
-    }
-  });
-
-  // Session Token (resets on server restart for security)
-  const sessionToken = crypto.randomBytes(32).toString('hex');
-
-  // Authentication Middleware
-  function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ success: false, error: "Não autorizado" });
-    }
-    const token = authHeader.split(" ")[1];
-    if (token !== sessionToken) {
-      return res.status(401).json({ success: false, error: "Token inválido ou expirado" });
-    }
-    next();
-  }
-
-  // Auth Routes
-  app.post("/api/login", (req, res) => {
-    const { email, password } = req.body;
-    if (email !== "mentalizecontabilidade@gmail.com") {
-      return res.status(401).json({ success: false, error: "Usuário não autorizado. Apenas o e-mail mentalizecontabilidade@gmail.com possui acesso." });
-    }
-    const settings = readSettings();
-    const hash = getHash(password);
-    if (hash === settings.adminPasswordHash) {
-      return res.json({ success: true, token: sessionToken });
-    }
-    return res.status(401).json({ success: false, error: "Senha incorreta" });
-  });
-
-  app.post("/api/change-password", requireAuth, (req, res) => {
-    const { currentPassword, newPassword } = req.body;
-    const settings = readSettings();
-    const currentHash = getHash(currentPassword);
-    if (currentHash !== settings.adminPasswordHash) {
-      return res.status(400).json({ success: false, error: "Senha atual incorreta" });
-    }
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
     
-    // Save settings with updated hash
-    settings.adminPasswordHash = getHash(newPassword);
-    writeSettings(settings);
-    res.json({ success: true });
-  });
+    let finalLead = {
+      id: Math.random().toString(36).substring(2, 11),
+      ...newLeadData,
+      data: new Date().toISOString()
+    };
 
-  app.get("/api/leads", requireAuth, async (req, res) => {
-    try {
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_ANON_KEY;
-      if (!supabaseUrl || !supabaseKey) {
-        return res.json(leads);
-      }
-      
-      const response = await fetch(`${supabaseUrl}/rest/v1/leads?select=*&order=data.desc`, {
+    if (supabaseUrl && supabaseKey) {
+      // Send to Supabase
+      const response = await fetch(`${supabaseUrl}/rest/v1/leads`, {
+        method: "POST",
         headers: {
           "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`
-        }
+          "Authorization": `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify(newLeadData)
       });
       if (!response.ok) {
-        throw new Error(`Supabase error: ${response.statusText}`);
+        throw new Error(`Supabase insert error: ${response.statusText}`);
       }
-      const data = await response.json();
-      res.json(data);
-    } catch (e) {
-      console.error("Erro ao buscar leads no Supabase:", e);
-      res.status(500).json({ success: false, error: "Erro ao buscar leads" });
+      const result = await response.json();
+      if (result && result.length > 0) {
+        finalLead = result[0];
+      }
+    } else {
+      // Local memory fallback
+      leads.unshift(finalLead);
     }
-  });
 
-  app.patch("/api/leads/:id", requireAuth, async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
+    // Lead Notification Dispatcher
+    await dispatchNotifications(finalLead);
+
+    res.status(201).json({ success: true, lead: finalLead });
+  } catch (error) {
+    console.error("Erro ao processar lead:", error);
+    res.status(500).json({ success: false, error: "Erro interno do servidor" });
+  }
+});
+
+// Session Token (resets on server restart for security)
+const sessionToken = crypto.randomBytes(32).toString('hex');
+
+// Authentication Middleware
+function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ success: false, error: "Não autorizado" });
+  }
+  const token = authHeader.split(" ")[1];
+  if (token !== sessionToken) {
+    return res.status(401).json({ success: false, error: "Token inválido ou expirado" });
+  }
+  next();
+}
+
+// Auth Routes
+app.post("/api/login", (req, res) => {
+  const { email, password } = req.body;
+  if (email !== "mentalizecontabilidade@gmail.com") {
+    return res.status(401).json({ success: false, error: "Usuário não autorizado. Apenas o e-mail mentalizecontabilidade@gmail.com possui acesso." });
+  }
+  const settings = readSettings();
+  const hash = getHash(password);
+  if (hash === settings.adminPasswordHash) {
+    return res.json({ success: true, token: sessionToken });
+  }
+  return res.status(401).json({ success: false, error: "Senha incorreta" });
+});
+
+app.post("/api/change-password", requireAuth, (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const settings = readSettings();
+  const currentHash = getHash(currentPassword);
+  if (currentHash !== settings.adminPasswordHash) {
+    return res.status(400).json({ success: false, error: "Senha atual incorreta" });
+  }
+  
+  // Save settings with updated hash
+  settings.adminPasswordHash = getHash(newPassword);
+  writeSettings(settings);
+  res.json({ success: true });
+});
+
+app.get("/api/leads", requireAuth, async (req, res) => {
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+      return res.json(leads);
+    }
     
-    try {
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_ANON_KEY;
-      
-      if (supabaseUrl && supabaseKey) {
-        const response = await fetch(`${supabaseUrl}/rest/v1/leads?id=eq.${id}`, {
-          method: "PATCH",
-          headers: {
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`,
-            "Content-Type": "application/json",
-            "Prefer": "return=representation"
-          },
-          body: JSON.stringify({ status })
-        });
-        if (!response.ok) {
-          throw new Error(`Supabase update error: ${response.statusText}`);
-        }
-        const result = await response.json();
-        if (result && result.length > 0) {
-          res.json({ success: true, lead: result[0] });
-        } else {
-          res.status(404).json({ success: false, error: "Lead não encontrado" });
-        }
+    const response = await fetch(`${supabaseUrl}/rest/v1/leads?select=*&order=data.desc`, {
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Supabase error: ${response.statusText}`);
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (e) {
+    console.error("Erro ao buscar leads no Supabase:", e);
+    res.status(500).json({ success: false, error: "Erro ao buscar leads" });
+  }
+});
+
+app.patch("/api/leads/:id", requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (supabaseUrl && supabaseKey) {
+      const response = await fetch(`${supabaseUrl}/rest/v1/leads?id=eq.${id}`, {
+        method: "PATCH",
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({ status })
+      });
+      if (!response.ok) {
+        throw new Error(`Supabase update error: ${response.statusText}`);
+      }
+      const result = await response.json();
+      if (result && result.length > 0) {
+        res.json({ success: true, lead: result[0] });
       } else {
-        const leadIndex = leads.findIndex(l => l.id === id);
-        if (leadIndex !== -1) {
-          leads[leadIndex].status = status;
-          res.json({ success: true, lead: leads[leadIndex] });
-        } else {
-          res.status(404).json({ success: false, error: "Lead não encontrado" });
-        }
+        res.status(404).json({ success: false, error: "Lead não encontrado" });
       }
-    } catch (error) {
-      console.error("Erro ao atualizar status:", error);
-      res.status(500).json({ success: false, error: "Erro ao atualizar status" });
+    } else {
+      const leadIndex = leads.findIndex(l => l.id === id);
+      if (leadIndex !== -1) {
+        leads[leadIndex].status = status;
+        res.json({ success: true, lead: leads[leadIndex] });
+      } else {
+        res.status(404).json({ success: false, error: "Lead não encontrado" });
+      }
     }
-  });
+  } catch (error) {
+    console.error("Erro ao atualizar status:", error);
+    res.status(500).json({ success: false, error: "Erro ao atualizar status" });
+  }
+});
 
-  // Settings Routes
-  app.get("/api/settings", requireAuth, (req, res) => {
-    const settings = readSettings();
-    const { adminPasswordHash, ...publicSettings } = settings;
-    res.json(publicSettings);
-  });
+// Settings Routes
+app.get("/api/settings", requireAuth, (req, res) => {
+  const settings = readSettings();
+  const { adminPasswordHash, ...publicSettings } = settings;
+  res.json(publicSettings);
+});
 
-  app.post("/api/settings", requireAuth, (req, res) => {
-    const { emails } = req.body;
-    if (!Array.isArray(emails)) {
-      return res.status(400).json({ success: false, error: "Dados inválidos" });
-    }
-    
-    const settings = readSettings();
-    settings.emails = emails;
-    writeSettings(settings);
-    res.json({ success: true });
-  });
+app.post("/api/settings", requireAuth, (req, res) => {
+  const { emails } = req.body;
+  if (!Array.isArray(emails)) {
+    return res.status(400).json({ success: false, error: "Dados inválidos" });
+  }
+  
+  const settings = readSettings();
+  settings.emails = emails;
+  writeSettings(settings);
+  res.json({ success: true });
+});
+
+async function startServer() {
+  const PORT = 3000;
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (!process.env.VERCEL) {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
@@ -275,10 +274,18 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
+
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
 
 async function dispatchNotifications(lead: Lead) {
   const settings = readSettings();
@@ -336,7 +343,4 @@ async function dispatchNotifications(lead: Lead) {
     }
   }
 
-
 }
-
-startServer();
