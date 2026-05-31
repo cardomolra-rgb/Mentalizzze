@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "DM Sans", sans-serif;
+  --color-navy: #0A1628;
+  --color-navy-dark: #050B14;
+  --color-gold: #C9A84C;
+  --color-gold-light: #DFBA6B;
+  --color-gold-dark: #9E7D2B;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-navy text-gray-200 font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+  
+  /* Scrollbar Customization */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0A1628;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #253347;
+    border-radius: 4px;
+    border: 2px solid #0A1628;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #C9A84C;
+  }
+}
+
+/* Utilities for rich branding aesthetics */
+.bg-grid-pattern {
+  background-image: radial-gradient(circle at 1px 1px, rgba(201, 168, 76, 0.04) 1px, transparent 0);
+  background-size: 40px 40px;
+}
+
+/* Glassmorphism containers */
+.glass-panel {
+  background: rgba(10, 22, 40, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+}
+
+.glass-panel:hover {
+  border-color: rgba(201, 168, 76, 0.3);
+  box-shadow: 0 0 30px rgba(201, 168, 76, 0.08);
+}
+
+/* Premium Gold Text Gradient */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #F5DFAB 0%, #C9A84C 50%, #917228 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Metallic gold background gradient for buttons */
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #DFBA6B 0%, #C9A84C 50%, #A37F2C 100%);
+}
+
+.bg-gold-gradient-hover {
+  background: linear-gradient(135deg, #EAD196 0%, #DFBA6B 50%, #C9A84C 100%);
+}
+
+/* Subtle glowing pulse animation */
+@keyframes ambient-glow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(20px, -20px) scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+.animate-glow {
+  animation: ambient-glow 10s ease-in-out infinite alternate;
+}
+
