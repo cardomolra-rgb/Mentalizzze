@@ -7,12 +7,16 @@ import fs from "fs";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let settingsPath = "";
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  settingsPath = path.join(__dirname, "settings.json");
+} catch (e) {
+  settingsPath = path.join(process.cwd(), "settings.json");
+}
 
 import crypto from "crypto";
-
-const settingsPath = path.join(__dirname, "settings.json");
 
 interface Settings {
   emails: string[];
