@@ -1,20 +1,12 @@
 import express from "express";
 import path from "path";
-import { fileURLToPath } from "url";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import fs from "fs";
 
 dotenv.config();
 
-let settingsPath = "";
-try {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  settingsPath = path.join(__dirname, "settings.json");
-} catch (e) {
-  settingsPath = path.join(process.cwd(), "settings.json");
-}
+const settingsPath = path.join(process.cwd(), "settings.json");
 
 import crypto from "crypto";
 
